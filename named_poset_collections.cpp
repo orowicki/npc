@@ -10,8 +10,12 @@ using std::map, std::unordered_map;
 using std::pair;
 using std::string;
 
-constexpr int N = 32;
 
-using collection_t =
-    unordered_map<long,
-                  map<string, pair<array<bitset<N>, N>, array<bitset<N>, N>>>>;
+#ifndef N
+#define N 32
+#endif
+
+unordered_map<long, map<string, 
+   pair<array<bitset<N>, N>, array<bitset<N>, N>>>> collection;
+
+
