@@ -18,6 +18,13 @@ explanation:
 - second: holds every relation that occurs based on transitivity, so if $a\leq b$ and $b\leq c$ in first then second has to contain $a \leq c $
 - \[ i ]\[ j ] = true -> $i \leq j$
 
+### details
+- second (transitive) will be recomputed every time first (base) changes
+- adding and removing relations to base is simple (just change the bit to true/false)
+- computing second can be done easily using bitsets (ar\[i] |= ar\[j] operation)
+
+
+
 ### misc
 
 dont hold user's `char const *` -> convert them to cpp strings, to prevent
