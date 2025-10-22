@@ -1,4 +1,11 @@
 # Notes
+### sidenote
+actually there is only one global collection so `using` isnt that useful, probably will initialize the collection and then access it
+```
+unordered_map<long, map<string, 
+   pair<array<bitset<N>, N>, array<bitset<N>, N>>>> collection;
+```
+----
 
 ```
 using collection_t = unordered_map<long, map<string, 
