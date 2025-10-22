@@ -2,11 +2,11 @@
 
 ```
 using collection_t = unordered_map<long, map<string, 
-   pair<array<bitset<N>, N>,array<bitset<N>, N>>>>
+   pair<array<bitset<N>, N>, array<bitset<N>, N>>>>
 ```
 ##### example usage
 ```
-long id, string name, int i, int j
+long id, string name, size_t i, size_t j
 collection_t[id][name].first[i][j] = true;
 collection_t[id][name].second[i][j] = false;
 ```
