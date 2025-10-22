@@ -7,8 +7,8 @@ using collection_t = unordered_map<long, map<string,
 ##### example usage
 ```
 long id, string name, size_t i, size_t j
-collection_t[id][name].first[i][j] = true;
-collection_t[id][name].second[i][j] = false;
+collection_t collections[id][name].first[i][j] = true;
+collection_t collections[id][name].second[i][j] = false;
 ```
 
 explanation:
