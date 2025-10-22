@@ -1,11 +1,16 @@
 #include "named_poset_collections.h"
+#include <algorithm>
+#include <array>
 #include <bitset>
+#include <cctype>
 #include <map>
 #include <string>
 #include <unordered_map>
 
+using std::all_of;
 using std::array;
 using std::bitset;
+using std::isalnum;
 using std::map, std::unordered_map;
 using std::pair;
 using std::string;
@@ -20,19 +25,36 @@ using collection_t =
     map<string, pair<array<bitset<N>, N>, array<bitset<N>, N>>>;
 using poset_t = pair<array<bitset<N>, N>, array<bitset<N>, N>>;
 
-unordered_map<long, collection_t> collections;
-long nextID = 0;
-
-bool collection_exists(long id) {
-  return collections.find(id) != collections.end();
+unordered_map<long, collection_t> &collections() {
+  static unordered_map<long, collection_t> collections;
+  return collections;
 }
 
-bool poset_exists(long id, string name) {
-  return collections[id].find(name) != collections[id].end();
+long &nextID() {
+  static long nextID = 0;
+  return nextID;
 }
 
-// implementation needed
-bool name_is_valid(string name) { return true; }
+bool collection_exists(const long id) {
+  return collections().find(id) != collections().end();
+}
+
+bool poset_exists(const long id, const string &name) {
+  return collections()[id].find(name) != collections()[id].end();
+}
+
+bool name_is_valid(const string &name) {
+  return !name.empty() && all_of(name.begin(), name.end(), [](char c) {
+    return (isalnum(static_cast<unsigned char>(c)) || c == '_');
+  });
+}
+
+void initialize_poset(poset_t &poset) {
+  for (int i = 0; i < N; i++) {
+    poset.first[i][i] = true;
+    poset.second[i][i] = true;
+  }
+}
 
 } // namespace
 
@@ -41,19 +63,19 @@ bool name_is_valid(string name) { return true; }
  */
 
 long npc_new_collection(void) {
-  if (nextID == LONG_MAX)
+  if (nextID() == LONG_MAX)
     return -1;
 
-  long id = nextID;
-  collections.emplace(id, collection_t());
-  nextID++;
+  long id = nextID();
+  collections().emplace(id, collection_t());
+  nextID()++;
 
   return id;
 }
 
 void npc_delete_collection(long id) {
   if (collection_exists(id))
-    collections.erase(id);
+    collections().erase(id);
 }
 
 /*
@@ -61,12 +83,13 @@ void npc_delete_collection(long id) {
  */
 
 bool npc_new_poset(long id, const char *name) {
-  string name_string = string(name);
+  const string name_string = string(name);
   if (collection_exists(id) && name_is_valid(name_string) &&
       !poset_exists(id, name_string)) {
-    collections[id].emplace(name_string, poset_t());
-    // initialize poset_t with the x = x, y = y.. relation <- implement
 
+    poset_t new_poset;
+    initialize_poset(new_poset);
+    collections()[id].emplace(name_string, new_poset);
     return true;
   }
 
@@ -77,13 +100,13 @@ bool npc_new_poset(long id, const char *name) {
  * Size functions
  */
 
-size_t npc_size() { return collections.size(); }
+size_t npc_size() { return collections().size(); }
 
 size_t npc_poset_size() { return (size_t)N; }
 
 size_t npc_collection_size(long id) {
   if (collection_exists(id))
-    return collections[id].size();
+    return collections()[id].size();
 
   return 0;
 }
