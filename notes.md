@@ -1,14 +1,15 @@
 # Notes
 
+Use one global structure to hold all collections, accessible based on their id.
 ```
-using collection_t = unordered_map<long, map<string, 
-   pair<array<bitset<N>, N>, array<bitset<N>, N>>>>
+unordered_map<long, map<string, 
+   pair<array<bitset<N>, N>, array<bitset<N>, N>>>> collections;
 ```
 ##### example usage
 ```
 long id, string name, size_t i, size_t j
-collection_t collections[id][name].first[i][j] = true;
-collection_t collections[id][name].second[i][j] = false;
+collections[id][name].first[i][j] = true;
+collections[id][name].second[i][j] = false;
 ```
 
 explanation:
