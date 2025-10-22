@@ -25,11 +25,13 @@ using collection_t =
     map<string, pair<array<bitset<N>, N>, array<bitset<N>, N>>>;
 using poset_t = pair<array<bitset<N>, N>, array<bitset<N>, N>>;
 
+// avoids static init order problem
 unordered_map<long, collection_t> &collections() {
   static unordered_map<long, collection_t> collections;
   return collections;
 }
 
+// avoids static init order problem
 long &nextID() {
   static long nextID = 0;
   return nextID;
@@ -40,15 +42,15 @@ bool collection_exists(const long id) {
 }
 
 bool poset_exists(const long id, const string &name) {
-  return collections()[id].find(name) != collections()[id].end();
+  return collections().at(id).find(name) != collections().at(id).end();
 }
-
+// verifies that name contains only a-z, A-Z, 0-9, _
 bool name_is_valid(const string &name) {
   return !name.empty() && all_of(name.begin(), name.end(), [](char c) {
     return (isalnum(static_cast<unsigned char>(c)) || c == '_');
   });
 }
-
+// adds {x, x} pairs to the poset's relation
 void initialize_poset(poset_t &poset) {
   for (int i = 0; i < N; i++) {
     poset.first[i][i] = true;
@@ -58,7 +60,7 @@ void initialize_poset(poset_t &poset) {
 
 } // namespace
 
-/*
+/**
  * Collection functions
  */
 
@@ -78,7 +80,7 @@ void npc_delete_collection(long id) {
     collections().erase(id);
 }
 
-/*
+/**
  * Poset functions
  */
 
@@ -89,14 +91,34 @@ bool npc_new_poset(long id, const char *name) {
 
     poset_t new_poset;
     initialize_poset(new_poset);
-    collections()[id].emplace(name_string, new_poset);
+    collections().at(id).emplace(std::move(name_string), std::move(new_poset));
     return true;
   }
 
   return false;
 }
 
-/*
+void npc_delete_poset(long id, const char *name) {
+  const string name_string = string(name);
+  if (collection_exists(id) && poset_exists(id, name_string)) {
+    collections().at(id).erase(name_string);
+  }
+}
+
+bool npc_copy_poset(long id, const char *name_dst, const char *name_src) {
+  const string name_dst_string(name_dst);
+  const string name_src_string(name_src);
+
+  if (collection_exists(id) && name_is_valid(name_dst_string) &&
+      poset_exists(id, name_src_string)) {
+    collections().at(id).emplace(std::move(name_dst_string),
+                                 collections().at(id).at(name_src_string));
+    return true;
+  }
+  return false;
+}
+
+/**
  * Size functions
  */
 
@@ -106,7 +128,7 @@ size_t npc_poset_size() { return (size_t)N; }
 
 size_t npc_collection_size(long id) {
   if (collection_exists(id))
-    return collections()[id].size();
+    return collections().at(id).size();
 
   return 0;
 }
