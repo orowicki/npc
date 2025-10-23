@@ -24,13 +24,11 @@ namespace {
 using poset_t = array<bitset<N>, N>;
 using collection_t = map<string, poset_t>;
 
-// avoids static init order problem
 unordered_map<long, collection_t> &collections() {
   static unordered_map<long, collection_t> collections;
   return collections;
 }
 
-// avoids static init order problem
 long &nextID() {
   static long nextID = 0;
   return nextID;
@@ -43,25 +41,36 @@ bool collection_exists(const long id) {
 bool poset_exists(const long id, const string &name) {
   return collections().at(id).find(name) != collections().at(id).end();
 }
-// verifies that name contains only a-z, A-Z, 0-9, _
+
+/**
+ * Returns true if name contains only the following characters:
+ * a-z, A-Z, 0-9, _
+ * Otherwise returns false.
+ */
 bool name_is_valid(const string &name) {
   return !name.empty() && all_of(name.begin(), name.end(), [](char c) {
     return (isalnum(static_cast<unsigned char>(c)) || c == '_');
   });
 }
-// adds {x, x} pairs to the poset's relation
+
+/**
+ * Initializes poset with {x, x} pairs to satisfy reflexivity.
+ */
 void initialize_poset(poset_t &poset) {
-  for (int i = 0; i < N; i++) {
+  for (int i = 0; i < N; ++i)
     poset[i][i] = true;
-  }
 }
 
-bool relation_removal_is_valid(long id, string name, size_t x, size_t y) {
+/**
+ * Returns true if there is no element z such that {x, z} and {y, z} belong to
+ * the poset. Otherwise returns false.
+ */
+bool relation_removal_is_valid(const long id, const string &name,
+                               const size_t x, const size_t y) {
   auto &poset = collections().at(id).at(name);
   for (size_t z = 0; z < (size_t)N; ++z) {
-    if (poset[x][z] && poset[z][y] && z != x && z != y) {
+    if (poset[x][z] && poset[z][y] && z != x && z != y)
       return false;
-    }
   }
   return true;
 }
@@ -76,12 +85,12 @@ bool relation_removal_is_valid(long id, string name, size_t x, size_t y) {
  * more complex one to handle transitivity.
  * Haven't come up with a counter-example yet.
  */
-void update_transitive_closure(long id, string name, size_t x, size_t y) {
+void update_transitive_closure(const long id, const string &name,
+                               const size_t x, const size_t y) {
   auto &poset = collections().at(id).at(name);
   for (size_t z = 0; z < (size_t)N; ++z) {
-    if (poset[z][x]) {
+    if (poset[z][x])
       poset[z] |= poset[y];
-    }
   }
 }
 
@@ -96,7 +105,7 @@ long npc_new_collection(void) {
 
   long id = nextID();
   collections().emplace(id, collection_t());
-  nextID()++;
+  ++nextID();
 
   return id;
 }
@@ -108,6 +117,7 @@ void npc_delete_collection(long id) {
 
 bool npc_new_poset(long id, const char *name) {
   const string name_string = string(name);
+
   if (collection_exists(id) && name_is_valid(name_string) &&
       !poset_exists(id, name_string)) {
 
@@ -122,9 +132,9 @@ bool npc_new_poset(long id, const char *name) {
 
 void npc_delete_poset(long id, const char *name) {
   const string name_string = string(name);
-  if (collection_exists(id) && poset_exists(id, name_string)) {
+
+  if (collection_exists(id) && poset_exists(id, name_string))
     collections().at(id).erase(name_string);
-  }
 }
 
 bool npc_copy_poset(long id, const char *name_dst, const char *name_src) {
@@ -133,10 +143,12 @@ bool npc_copy_poset(long id, const char *name_dst, const char *name_src) {
 
   if (collection_exists(id) && name_is_valid(name_dst_string) &&
       poset_exists(id, name_src_string)) {
+
     collections().at(id).emplace(std::move(name_dst_string),
                                  collections().at(id).at(name_src_string));
     return true;
   }
+
   return false;
 }
 
@@ -149,18 +161,18 @@ char const *npc_first_poset(long id) {
 
 char const *npc_next_poset(long id, char const *name) {
   string name_string(name);
+
   if (collection_exists(id) && poset_exists(id, name_string) &&
       next(collections().at(id).find(name_string)) !=
-          collections().at(id).end()) {
-
+          collections().at(id).end())
     return next(collections().at(id).find(name_string))->first.c_str();
-  }
 
   return NULL;
 }
 
 bool npc_add_relation(long id, const char *name, size_t x, size_t y) {
   string name_string = string(name);
+
   if (collection_exists(id) && poset_exists(id, name_string) && x < (size_t)N &&
       y < (size_t)N && !collections().at(id).at(name_string)[x][y]) {
     update_transitive_closure(id, name_string, x, y);
@@ -172,23 +184,24 @@ bool npc_add_relation(long id, const char *name, size_t x, size_t y) {
 
 bool npc_is_relation(long id, const char *name, size_t x, size_t y) {
   string name_string = string(name);
+
   if (collection_exists(id) && poset_exists(id, name_string) && x < (size_t)N &&
-      y < size_t(N)) {
+      y < size_t(N))
     return collections().at(id).at(name_string)[x][y];
-  }
+
   return false;
 }
 
 bool npc_remove_relation(long id, const char *name, size_t x, size_t y) {
   string name_string = string(name);
-  if (collection_exists(id) && poset_exists(id, name_string) && x != y &&
-      x < (size_t)N && y < (size_t)N) {
-    if (relation_removal_is_valid(id, name_string, x, y) &&
-        collections().at(id).at(name)[x][y]) {
 
-      collections().at(id).at(name)[x][y] = false;
-      return true;
-    }
+  if (collection_exists(id) && poset_exists(id, name_string) && x != y &&
+      x < (size_t)N && y < (size_t)N &&
+      relation_removal_is_valid(id, name_string, x, y) &&
+      collections().at(id).at(name)[x][y]) {
+
+    collections().at(id).at(name)[x][y] = false;
+    return true;
   }
 
   return false;
