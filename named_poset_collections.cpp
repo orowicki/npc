@@ -12,6 +12,7 @@ using std::array;
 using std::bitset;
 using std::isalnum;
 using std::map, std::unordered_map;
+using std::next;
 using std::pair;
 using std::string;
 
@@ -117,6 +118,29 @@ bool npc_copy_poset(long id, const char *name_dst, const char *name_src) {
   }
   return false;
 }
+
+char const *npc_first_poset(long id) {
+  if (collection_exists(id) && !collections().at(id).empty())
+    return collections().at(id).begin()->first.c_str();
+
+  return NULL;
+}
+
+char const *npc_next_poset(long id, char const *name) {
+  string name_string(name);
+  if (collection_exists(id) && poset_exists(id, name_string) &&
+      next(collections().at(id).find(name_string)) !=
+          collections().at(id).end()) {
+
+    return next(collections().at(id).find(name_string))->first.c_str();
+  }
+
+  return NULL;
+}
+
+/**
+ * Relation functions
+ */
 
 /**
  * Size functions
