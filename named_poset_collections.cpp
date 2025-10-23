@@ -22,9 +22,8 @@ using std::string;
 
 namespace {
 
-using collection_t =
-    map<string, pair<array<bitset<N>, N>, array<bitset<N>, N>>>;
-using poset_t = pair<array<bitset<N>, N>, array<bitset<N>, N>>;
+using poset_t = array<bitset<N>, N>;
+using collection_t = map<string, poset_t>;
 
 // avoids static init order problem
 unordered_map<long, collection_t> &collections() {
@@ -54,8 +53,7 @@ bool name_is_valid(const string &name) {
 // adds {x, x} pairs to the poset's relation
 void initialize_poset(poset_t &poset) {
   for (int i = 0; i < N; i++) {
-    poset.first[i][i] = true;
-    poset.second[i][i] = true;
+    poset[i][i] = true;
   }
 }
 
@@ -141,6 +139,15 @@ char const *npc_next_poset(long id, char const *name) {
 /**
  * Relation functions
  */
+
+bool npc_is_relation(long id, const char *name, size_t x, size_t y) {
+  string name_string = string(name);
+  if (collection_exists(id) && poset_exists(id, name_string) && x < (size_t)N &&
+      y < size_t(N)) {
+    return collections().at(id).at(name_string)[x][y];
+  }
+  return false;
+}
 
 /**
  * Size functions
