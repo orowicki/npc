@@ -13,7 +13,6 @@ using std::bitset;
 using std::isalnum;
 using std::map, std::unordered_map;
 using std::next;
-using std::pair;
 using std::string;
 
 #ifndef N
@@ -59,12 +58,31 @@ void initialize_poset(poset_t &poset) {
 
 bool relation_removal_is_valid(long id, string name, size_t x, size_t y) {
   auto &poset = collections().at(id).at(name);
-  for (size_t z = 0; z < (size_t)N; z++) {
+  for (size_t z = 0; z < (size_t)N; ++z) {
     if (poset[x][z] && poset[z][y] && z != x && z != y) {
       return false;
     }
   }
   return true;
+}
+
+/**
+ * We're adding {x, y}. To make it simple, we'll use < as the relation (<=)
+ * Explanation:
+ * Go over every element z that satisfies z < x,
+ * Use bitset OR so that z is now < every element that y is < (incl. y)
+ *
+ * !!! I'm not sure if this loop is sufficient, might need to add a second
+ * more complex one to handle transitivity.
+ * Haven't come up with a counter-example yet.
+ */
+void update_transitive_closure(long id, string name, size_t x, size_t y) {
+  auto &poset = collections().at(id).at(name);
+  for (size_t z; z < (size_t)N; ++z) {
+    if (poset[z][x]) {
+      poset[z] |= poset[y];
+    }
+  }
 }
 
 } // namespace
@@ -149,6 +167,17 @@ char const *npc_next_poset(long id, char const *name) {
 /**
  * Relation functions
  */
+
+bool npc_add_relation(long id, const char *name, size_t x, size_t y) {
+  string name_string = string(name);
+  if (collection_exists(id) && poset_exists(id, name_string) && x < (size_t)N &&
+      y < (size_t)N && !collections().at(id).at(name_string)[x][y]) {
+    update_transitive_closure(id, name_string, x, y);
+    return true;
+  }
+
+  return false;
+}
 
 bool npc_is_relation(long id, const char *name, size_t x, size_t y) {
   string name_string = string(name);
