@@ -57,6 +57,16 @@ void initialize_poset(poset_t &poset) {
   }
 }
 
+bool relation_removal_is_valid(long id, string name, size_t x, size_t y) {
+  auto &poset = collections().at(id).at(name);
+  for (size_t z = 0; z < (size_t)N; z++) {
+    if (poset[x][z] && poset[z][y] && z != x && z != y) {
+      return false;
+    }
+  }
+  return true;
+}
+
 } // namespace
 
 /**
@@ -146,6 +156,21 @@ bool npc_is_relation(long id, const char *name, size_t x, size_t y) {
       y < size_t(N)) {
     return collections().at(id).at(name_string)[x][y];
   }
+  return false;
+}
+
+bool npc_remove_relation(long id, const char *name, size_t x, size_t y) {
+  string name_string = string(name);
+  if (collection_exists(id) && poset_exists(id, name_string) && x != y &&
+      x < (size_t)N && y < (size_t)N) {
+    if (relation_removal_is_valid(id, name_string, x, y) &&
+        collections().at(id).at(name)[x][y]) {
+
+      collections().at(id).at(name)[x][y] = false;
+      return true;
+    }
+  }
+
   return false;
 }
 
