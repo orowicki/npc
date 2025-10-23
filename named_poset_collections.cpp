@@ -78,7 +78,7 @@ bool relation_removal_is_valid(long id, string name, size_t x, size_t y) {
  */
 void update_transitive_closure(long id, string name, size_t x, size_t y) {
   auto &poset = collections().at(id).at(name);
-  for (size_t z; z < (size_t)N; ++z) {
+  for (size_t z = 0; z < (size_t)N; ++z) {
     if (poset[z][x]) {
       poset[z] |= poset[y];
     }
@@ -87,9 +87,8 @@ void update_transitive_closure(long id, string name, size_t x, size_t y) {
 
 } // namespace
 
-/**
- * Collection functions
- */
+namespace cxx {
+extern "C" {
 
 long npc_new_collection(void) {
   if (nextID() == LONG_MAX)
@@ -106,10 +105,6 @@ void npc_delete_collection(long id) {
   if (collection_exists(id))
     collections().erase(id);
 }
-
-/**
- * Poset functions
- */
 
 bool npc_new_poset(long id, const char *name) {
   const string name_string = string(name);
@@ -164,10 +159,6 @@ char const *npc_next_poset(long id, char const *name) {
   return NULL;
 }
 
-/**
- * Relation functions
- */
-
 bool npc_add_relation(long id, const char *name, size_t x, size_t y) {
   string name_string = string(name);
   if (collection_exists(id) && poset_exists(id, name_string) && x < (size_t)N &&
@@ -203,10 +194,6 @@ bool npc_remove_relation(long id, const char *name, size_t x, size_t y) {
   return false;
 }
 
-/**
- * Size functions
- */
-
 size_t npc_size() { return collections().size(); }
 
 size_t npc_poset_size() { return (size_t)N; }
@@ -217,3 +204,6 @@ size_t npc_collection_size(long id) {
 
   return 0;
 }
+
+} // extern "C"
+} // namespace cxx
