@@ -19,6 +19,11 @@ explanation:
 - second: holds every relation that occurs based on transitivity, so if $a\leq b$ and $b\leq c$ in first then second has to contain $a \leq c $
 - \[ i ]\[ j ] = true -> $i \leq j$
 
+## important !!!
+Make sure that `update_transitive_closure` actually works, the one loop might not be sufficient.
+@marcino cwelu
+
+
 ### details
 - second (transitive) will be recomputed every time first (base) changes
 - adding and removing relations to base is simple (just change the bit to true/false)
@@ -34,3 +39,4 @@ user's access to the collection's contents.
 namespace cxx
 
 static global init problem (program has to work when linked with .o files swapped around)
+
