@@ -1,4 +1,5 @@
 #include "named_poset_collections.h"
+
 #include <algorithm>
 #include <array>
 #include <bitset>
@@ -19,48 +20,55 @@ using std::string;
 #define N 32
 #endif
 
-namespace {
+namespace
+{
 
-using poset_t = array<bitset<N>, N>;
+using poset_t      = array<bitset<N>, N>;
 using collection_t = map<string, poset_t>;
 
-// SIOF workaround
-unordered_map<long, collection_t> &collections() {
-  static unordered_map<long, collection_t> collections;
-  return collections;
+/* SIOF workaround */
+unordered_map<long, collection_t> &collections()
+{
+    static unordered_map<long, collection_t> collections;
+    return collections;
 }
 
-// SIOF workaround
-long &nextID() {
-  static long nextID = 0;
-  return nextID;
+/* SIOF workaround */
+long &nextID()
+{
+    static long nextID = 0;
+    return nextID;
 }
 
-bool collection_exists(const long id) {
-  return collections().find(id) != collections().end();
+bool collection_exists(const long id)
+{
+    return collections().find(id) != collections().end();
 }
 
-bool poset_exists(const long id, const string &name) {
-  return collections().at(id).find(name) != collections().at(id).end();
+bool poset_exists(const long id, const string &name)
+{
+    return collections().at(id).find(name) != collections().at(id).end();
 }
 
 /**
- * Returns true if name contains only the following characters:
+ * Returns true if name is not empty and contains only the following characters:
  * a-z, A-Z, 0-9, _
  * Otherwise returns false.
  */
-bool name_is_valid(const string &name) {
-  return (!name.empty() && all_of(name.begin(), name.end(), [](char c) {
-    return (isalnum(static_cast<unsigned char>(c)) || c == '_');
-  }));
+bool name_is_valid(const string &name)
+{
+    return (!name.empty() && all_of(name.begin(), name.end(), [](char c) {
+        return (isalnum(static_cast<unsigned char>(c)) || c == '_');
+    }));
 }
 
 /**
  * Initializes poset with {x, x} pairs to satisfy reflexivity.
  */
-void initialize_poset(poset_t &poset) {
-  for (size_t i = 0; i < (size_t)N; ++i)
-    poset[i][i] = true;
+void initialize_poset(poset_t &poset)
+{
+    for (size_t i = 0; i < (size_t)N; ++i)
+        poset[i][i] = true;
 }
 
 /**
@@ -68,14 +76,15 @@ void initialize_poset(poset_t &poset) {
  * the poset. Otherwise returns false.
  */
 bool relation_removal_is_valid(const long id, const string &name,
-                               const size_t x, const size_t y) {
-  auto &poset = collections().at(id).at(name);
-  for (size_t z = 0; z < (size_t)N; ++z) {
-    if (poset[x][z] && poset[z][y] && z != x && z != y)
-      return false;
-  }
+                               const size_t x, const size_t y)
+{
+    auto &poset = collections().at(id).at(name);
+    for (size_t z = 0; z < (size_t)N; ++z) {
+        if (poset[x][z] && poset[z][y] && z != x && z != y)
+            return false;
+    }
 
-  return true;
+    return true;
 }
 
 /**
@@ -89,136 +98,154 @@ bool relation_removal_is_valid(const long id, const string &name,
  * Haven't come up with a counter-example yet.
  */
 void update_transitive_closure(const long id, const string &name,
-                               const size_t x, const size_t y) {
-  auto &poset = collections().at(id).at(name);
-  for (size_t z = 0; z < (size_t)N; ++z) {
-    if (poset[z][x])
-      poset[z] |= poset[y];
-  }
+                               const size_t x, const size_t y)
+{
+    auto &poset = collections().at(id).at(name);
+    for (size_t z = 0; z < (size_t)N; ++z) {
+        if (poset[z][x])
+            poset[z] |= poset[y];
+    }
 }
 
 } // namespace
 
-namespace cxx {
+namespace cxx
+{
 extern "C" {
 
-long npc_new_collection(void) {
-  if (nextID() == LONG_MAX)
-    return -1;
+long npc_new_collection(void)
+{
+    if (nextID() == LONG_MAX)
+        return -1;
 
-  long id = nextID();
-  collections().emplace(id, collection_t());
-  ++nextID();
+    long id = nextID();
+    collections().emplace(id, collection_t());
+    ++nextID();
 
-  return id;
+    return id;
 }
 
-void npc_delete_collection(long id) {
-  if (collection_exists(id))
-    collections().erase(id);
+void npc_delete_collection(long id)
+{
+    if (collection_exists(id))
+        collections().erase(id);
 }
 
-bool npc_new_poset(long id, const char *name) {
-  const string name_string(name);
+bool npc_new_poset(long id, const char *name)
+{
+    const string name_string(name);
 
-  if (collection_exists(id) && name_is_valid(name_string) &&
-      !poset_exists(id, name_string)) {
+    if (collection_exists(id) && name_is_valid(name_string) &&
+        !poset_exists(id, name_string)) {
+        poset_t new_poset;
+        initialize_poset(new_poset);
+        collections().at(id).emplace(std::move(name_string),
+                                     std::move(new_poset));
+        return true;
+    }
 
-    poset_t new_poset;
-    initialize_poset(new_poset);
-    collections().at(id).emplace(std::move(name_string), std::move(new_poset));
-    return true;
-  }
-
-  return false;
+    return false;
 }
 
-void npc_delete_poset(long id, const char *name) {
-  const string name_string(name);
+void npc_delete_poset(long id, const char *name)
+{
+    const string name_string(name);
 
-  if (collection_exists(id) && poset_exists(id, name_string))
-    collections().at(id).erase(name_string);
+    if (collection_exists(id) && poset_exists(id, name_string))
+        collections().at(id).erase(name_string);
 }
 
-bool npc_copy_poset(long id, const char *name_dst, const char *name_src) {
-  const string name_dst_string(name_dst);
-  const string name_src_string(name_src);
+bool npc_copy_poset(long id, const char *name_dst, const char *name_src)
+{
+    const string name_dst_string(name_dst);
+    const string name_src_string(name_src);
 
-  if (collection_exists(id) && name_is_valid(name_dst_string) &&
-      poset_exists(id, name_src_string)) {
+    if (collection_exists(id) && name_is_valid(name_dst_string) &&
+        poset_exists(id, name_src_string)) {
+        collections().at(id).emplace(std::move(name_dst_string),
+                                     collections().at(id).at(name_src_string));
+        return true;
+    }
 
-    collections().at(id).emplace(std::move(name_dst_string),
-                                 collections().at(id).at(name_src_string));
-    return true;
-  }
-
-  return false;
+    return false;
 }
 
-char const *npc_first_poset(long id) {
-  if (collection_exists(id) && !collections().at(id).empty())
-    return collections().at(id).begin()->first.c_str();
+char const *npc_first_poset(long id)
+{
+    if (collection_exists(id) && !collections().at(id).empty())
+        return collections().at(id).begin()->first.c_str();
 
-  return NULL;
+    return NULL;
 }
 
-char const *npc_next_poset(long id, char const *name) {
-  const string name_string(name);
+char const *npc_next_poset(long id, char const *name)
+{
+    const string name_string(name);
 
-  if (collection_exists(id) && poset_exists(id, name_string) &&
-      next(collections().at(id).find(name_string)) !=
-          collections().at(id).end())
-    return next(collections().at(id).find(name_string))->first.c_str();
+    if (collection_exists(id) && poset_exists(id, name_string) &&
+        next(collections().at(id).find(name_string)) !=
+            collections().at(id).end())
+        return next(collections().at(id).find(name_string))->first.c_str();
 
-  return NULL;
+    return NULL;
 }
 
-bool npc_add_relation(long id, const char *name, size_t x, size_t y) {
-  const string name_string(name);
+bool npc_add_relation(long id, const char *name, size_t x, size_t y)
+{
+    const string name_string(name);
 
-  if (collection_exists(id) && poset_exists(id, name_string) && x < (size_t)N &&
-      y < (size_t)N && !collections().at(id).at(name_string)[x][y]) {
-    update_transitive_closure(id, name_string, x, y);
-    return true;
-  }
+    if (collection_exists(id) && poset_exists(id, name_string) &&
+        x < (size_t)N && y < (size_t)N &&
+        !collections().at(id).at(name_string)[x][y]) {
+        update_transitive_closure(id, name_string, x, y);
+        return true;
+    }
 
-  return false;
+    return false;
 }
 
-bool npc_is_relation(long id, const char *name, size_t x, size_t y) {
-  const string name_string(name);
+bool npc_is_relation(long id, const char *name, size_t x, size_t y)
+{
+    const string name_string(name);
 
-  if (collection_exists(id) && poset_exists(id, name_string) && x < (size_t)N &&
-      y < size_t(N))
-    return collections().at(id).at(name_string)[x][y];
+    if (collection_exists(id) && poset_exists(id, name_string) &&
+        x < (size_t)N && y < size_t(N))
+        return collections().at(id).at(name_string)[x][y];
 
-  return false;
+    return false;
 }
 
-bool npc_remove_relation(long id, const char *name, size_t x, size_t y) {
-  const string name_string(name);
+bool npc_remove_relation(long id, const char *name, size_t x, size_t y)
+{
+    const string name_string(name);
 
-  if (collection_exists(id) && poset_exists(id, name_string) && x != y &&
-      x < (size_t)N && y < (size_t)N &&
-      relation_removal_is_valid(id, name_string, x, y) &&
-      collections().at(id).at(name)[x][y]) {
+    if (collection_exists(id) && poset_exists(id, name_string) && x != y &&
+        x < (size_t)N && y < (size_t)N &&
+        relation_removal_is_valid(id, name_string, x, y) &&
+        collections().at(id).at(name)[x][y]) {
+        collections().at(id).at(name)[x][y] = false;
+        return true;
+    }
 
-    collections().at(id).at(name)[x][y] = false;
-    return true;
-  }
-
-  return false;
+    return false;
 }
 
-size_t npc_size() { return collections().size(); }
+size_t npc_size()
+{
+    return collections().size();
+}
 
-size_t npc_poset_size() { return (size_t)N; }
+size_t npc_poset_size()
+{
+    return (size_t)N;
+}
 
-size_t npc_collection_size(long id) {
-  if (collection_exists(id))
-    return collections().at(id).size();
+size_t npc_collection_size(long id)
+{
+    if (collection_exists(id))
+        return collections().at(id).size();
 
-  return 0;
+    return 0;
 }
 
 } // extern "C"

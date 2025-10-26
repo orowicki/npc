@@ -4,7 +4,8 @@
 #include <stddef.h>
 
 #ifdef __cplusplus
-namespace cxx {
+namespace cxx
+{
 extern "C" {
 #endif
 
