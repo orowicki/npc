@@ -7,7 +7,7 @@
 #include <map>
 #include <string>
 #include <unordered_map>
-#include <limits>
+#include <climits>
 
 using std::all_of;
 using std::array;
