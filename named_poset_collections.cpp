@@ -73,7 +73,7 @@ void initialize_poset(poset_t &poset)
 }
 
 /**
- * Returns true if there is no element z such that {x, z} and {y, z} belong to
+ * Returns true if there is no element z such that {x, z} and {z, y} belong to
  * the poset. Otherwise returns false.
  */
 bool relation_removal_is_valid(const long id, const string &name,
