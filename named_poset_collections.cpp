@@ -123,7 +123,6 @@ void update_transitive_closure(const long id, const string &name,
 
 namespace cxx
 {
-extern "C" {
 
 long npc_new_collection(void)
 {
@@ -260,5 +259,4 @@ size_t npc_collection_size(long id)
     return 0;
 }
 
-} // extern "C"
 } // namespace cxx
