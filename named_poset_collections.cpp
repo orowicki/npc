@@ -144,6 +144,8 @@ void npc_delete_collection(long id)
 
 bool npc_new_poset(long id, const char *name)
 {
+    if (!name)
+        return false;
     const string name_string(name);
 
     if (collection_exists(id) && name_is_valid(name_string) &&
@@ -160,6 +162,8 @@ bool npc_new_poset(long id, const char *name)
 
 void npc_delete_poset(long id, const char *name)
 {
+    if (!name)
+        return;
     const string name_string(name);
 
     if (collection_exists(id) && poset_exists(id, name_string))
@@ -168,6 +172,9 @@ void npc_delete_poset(long id, const char *name)
 
 bool npc_copy_poset(long id, const char *name_dst, const char *name_src)
 {
+    if (!name_dst || !name_src)
+        return false;
+
     const string name_dst_string(name_dst);
     const string name_src_string(name_src);
 
@@ -191,6 +198,8 @@ char const *npc_first_poset(long id)
 
 char const *npc_next_poset(long id, char const *name)
 {
+    if (!name)
+        return NULL;
     const string name_string(name);
 
     if (collection_exists(id) && poset_exists(id, name_string) &&
@@ -203,6 +212,8 @@ char const *npc_next_poset(long id, char const *name)
 
 bool npc_add_relation(long id, const char *name, size_t x, size_t y)
 {
+    if (!name)
+        return false;
     const string name_string(name);
 
     if (collection_exists(id) && poset_exists(id, name_string) &&
@@ -217,6 +228,8 @@ bool npc_add_relation(long id, const char *name, size_t x, size_t y)
 
 bool npc_is_relation(long id, const char *name, size_t x, size_t y)
 {
+    if (!name)
+        return false;
     const string name_string(name);
 
     if (collection_exists(id) && poset_exists(id, name_string) &&
@@ -228,6 +241,8 @@ bool npc_is_relation(long id, const char *name, size_t x, size_t y)
 
 bool npc_remove_relation(long id, const char *name, size_t x, size_t y)
 {
+    if (!name)
+        return false;
     const string name_string(name);
 
     if (collection_exists(id) && poset_exists(id, name_string) && x != y &&
