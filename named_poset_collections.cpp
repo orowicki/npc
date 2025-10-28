@@ -99,15 +99,15 @@ bool relation_addition_is_valid(const long id, const string &name,
                                 const size_t x, const size_t y)
 {
     auto &poset = collections().at(id).at(name);
-    return !(poset[x][y] || poset[y][x]);
+    return !poset[x][y] && !poset[y][x];
 }
 
 /**
  * Adds the relation {x, y} and updates the poset to satisfy transitivity.
  * Explanation:
  * Go over every element z that satisfies {z, x},
- * Use bitset OR so that z is now in relation with every element that y is in
- * relation with.
+ * Use bitset OR so that z is now in relation {z, ...} with every element that y
+ * is in relation {y, ...} with.
  */
 void update_transitive_closure(const long id, const string &name,
                                const size_t x, const size_t y)
@@ -208,7 +208,6 @@ bool npc_add_relation(long id, const char *name, size_t x, size_t y)
 
     if (collection_exists(id) && poset_exists(id, name_string) &&
         x < (size_t)N && y < (size_t)N &&
-        !collections().at(id).at(name_string)[x][y] &&
         relation_addition_is_valid(id, name_string, x, y)) {
         update_transitive_closure(id, name_string, x, y);
         return true;
