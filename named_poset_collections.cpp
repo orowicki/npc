@@ -180,8 +180,8 @@ bool npc_copy_poset(long id, const char *name_dst, const char *name_src)
 
     if (collection_exists(id) && name_is_valid(name_dst_string) &&
         poset_exists(id, name_src_string)) {
-        collections().at(id).emplace(std::move(name_dst_string),
-                                     collections().at(id).at(name_src_string));
+        collections().at(id)[name_dst_string] =
+            collections().at(id).at(name_src_string);
         return true;
     }
 
