@@ -190,8 +190,13 @@ bool npc_copy_poset(long id, const char *name_dst, const char *name_src)
 
 char const *npc_first_poset(long id)
 {
-    if (collection_exists(id) && !collections().at(id).empty())
-        return collections().at(id).begin()->first.c_str();
+    if (!collection_exists(id)) 
+        return NULL;
+    
+    collection_t c = collections().at(id);
+
+    if (!c.empty())
+        return c.begin()->first.c_str();
 
     return NULL;
 }
