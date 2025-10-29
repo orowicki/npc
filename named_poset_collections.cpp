@@ -48,6 +48,11 @@ bool collection_exists(const long id)
 
 bool poset_exists(const long id, const string &name)
 {
+    bool col_exists = collection_exists(id);
+
+    if (!col_exists)    
+        return false;
+
     return collections().at(id).find(name) != collections().at(id).end();
 }
 
@@ -77,9 +82,11 @@ void initialize_poset(poset_t &poset)
  * the poset. Otherwise returns false.
  */
 bool relation_removal_is_valid(const long id, const string &name,
-                               const size_t x, const size_t y)
+                               const size_t x, const size_t y, auto &poset)
 {
-    auto &poset = collections().at(id).at(name);
+    if (!poset[x][y])
+        return false;
+    
     for (size_t z = 0; z < (size_t)N; ++z) {
         if (poset[x][z] && poset[z][y] && z != x && z != y)
             return false;
@@ -96,9 +103,8 @@ bool relation_removal_is_valid(const long id, const string &name,
  *         true otherwise.
  */
 bool relation_addition_is_valid(const long id, const string &name,
-                                const size_t x, const size_t y)
+                                const size_t x, const size_t y, auto &poset)
 {
-    auto &poset = collections().at(id).at(name);
     return !poset[x][y] && !poset[y][x];
 }
 
@@ -110,9 +116,8 @@ bool relation_addition_is_valid(const long id, const string &name,
  * is in relation {y, ...} with.
  */
 void update_transitive_closure(const long id, const string &name,
-                               const size_t x, const size_t y)
+                               const size_t x, const size_t y, auto &poset)
 {
-    auto &poset = collections().at(id).at(name);
     for (size_t z = 0; z < (size_t)N; ++z) {
         if (poset[z][x])
             poset[z] |= poset[y];
@@ -142,14 +147,17 @@ void npc_delete_collection(long id)
         collections().erase(id);
 }
 
+// double check - maybe improve? don't think it's necessary(poset_exsits)
 bool npc_new_poset(long id, const char *name)
 {
     if (!name)
         return false;
     const string name_string(name);
 
-    if (collection_exists(id) && name_is_valid(name_string) &&
-        !poset_exists(id, name_string)) {
+    if (!name_is_valid(name_string))
+        return false;
+
+    if (collection_exists(id) && !poset_exists(id, name_string)) {
         poset_t new_poset;
         initialize_poset(new_poset);
         collections().at(id).emplace(std::move(name_string),
@@ -166,7 +174,7 @@ void npc_delete_poset(long id, const char *name)
         return;
     const string name_string(name);
 
-    if (collection_exists(id) && poset_exists(id, name_string))
+    if (poset_exists(id, name_string))
         collections().at(id).erase(name_string);
 }
 
@@ -178,8 +186,15 @@ bool npc_copy_poset(long id, const char *name_dst, const char *name_src)
     const string name_dst_string(name_dst);
     const string name_src_string(name_src);
 
-    if (collection_exists(id) && name_is_valid(name_dst_string) &&
-        poset_exists(id, name_src_string)) {
+    /**
+    * Checks only the name of the destination string.
+    * There's no need to check the source string because
+    * a poset with that name can never be added.
+    */
+    if (!name_is_valid(name_dst_string))
+        return false;
+
+    if (poset_exists(id, name_src_string)) {
         collections().at(id)[name_dst_string] =
             collections().at(id).at(name_src_string);
         return true;
@@ -201,15 +216,18 @@ char const *npc_first_poset(long id)
     return NULL;
 }
 
+// double check - maybe improve? don't think it's necessary (2nd and 3rd if statement)
 char const *npc_next_poset(long id, char const *name)
 {
     if (!name)
         return NULL;
     const string name_string(name);
 
-    if (collection_exists(id) && poset_exists(id, name_string) &&
-        next(collections().at(id).find(name_string)) !=
-            collections().at(id).end())
+    if (!poset_exists(id, name_string)) 
+        return NULL;
+
+    if (next(collections().at(id).find(name_string)) != 
+                                                collections().at(id).end())
         return next(collections().at(id).find(name_string))->first.c_str();
 
     return NULL;
@@ -217,14 +235,16 @@ char const *npc_next_poset(long id, char const *name)
 
 bool npc_add_relation(long id, const char *name, size_t x, size_t y)
 {
-    if (!name)
+    if (!name || x >= (size_t)N || y >= (size_t)N)
         return false;
     const string name_string(name);
 
-    if (collection_exists(id) && poset_exists(id, name_string) &&
-        x < (size_t)N && y < (size_t)N &&
-        relation_addition_is_valid(id, name_string, x, y)) {
-        update_transitive_closure(id, name_string, x, y);
+    if (!poset_exists(id, name_string))
+        return false;
+
+    auto &poset = collections().at(id).at(name);
+    if (relation_addition_is_valid(id, name_string, x, y, poset)) {
+        update_transitive_closure(id, name_string, x, y, poset);
         return true;
     }
 
@@ -233,12 +253,11 @@ bool npc_add_relation(long id, const char *name, size_t x, size_t y)
 
 bool npc_is_relation(long id, const char *name, size_t x, size_t y)
 {
-    if (!name)
+    if (!name || x >= (size_t)N || y >= size_t(N))
         return false;
     const string name_string(name);
 
-    if (collection_exists(id) && poset_exists(id, name_string) &&
-        x < (size_t)N && y < size_t(N))
+    if (poset_exists(id, name_string))
         return collections().at(id).at(name_string)[x][y];
 
     return false;
@@ -246,14 +265,15 @@ bool npc_is_relation(long id, const char *name, size_t x, size_t y)
 
 bool npc_remove_relation(long id, const char *name, size_t x, size_t y)
 {
-    if (!name)
+    if (!name || x != y || x <= (size_t)N || y <= (size_t)N)
         return false;
     const string name_string(name);
 
-    if (collection_exists(id) && poset_exists(id, name_string) && x != y &&
-        x < (size_t)N && y < (size_t)N &&
-        relation_removal_is_valid(id, name_string, x, y) &&
-        collections().at(id).at(name)[x][y]) {
+    if (!poset_exists(id, name_string))
+        return false;
+    
+    auto &poset = collections().at(id).at(name);
+    if (relation_removal_is_valid(id, name_string, x, y, poset)) {
         collections().at(id).at(name)[x][y] = false;
         return true;
     }
