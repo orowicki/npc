@@ -92,17 +92,14 @@ void initialize_poset(poset_t &poset)
 bool relation_removal_is_valid(const collection_t::iterator pos_it,
                                const size_t x, const size_t y)
 {
-    auto &poset = pos_it->second;
-
-    if (!poset[x][y])
-        return false;
+    const poset_t &poset = pos_it->second;
 
     for (size_t z = 0; z < N; ++z) {
         if (poset[x][z] && poset[z][y] && z != x && z != y)
             return false;
     }
 
-    return true;
+    return poset[x][y];
 }
 
 /**
@@ -115,7 +112,7 @@ bool relation_removal_is_valid(const collection_t::iterator pos_it,
 bool relation_addition_is_valid(const collection_t::iterator pos_it,
                                 const size_t x, const size_t y)
 {
-    auto &poset = pos_it->second;
+    const poset_t &poset = pos_it->second;
     return !poset[x][y] && !poset[y][x];
 }
 
@@ -129,7 +126,7 @@ bool relation_addition_is_valid(const collection_t::iterator pos_it,
 void update_transitive_closure(const collection_t::iterator pos_it,
                                const size_t x, const size_t y)
 {
-    auto &poset = pos_it->second;
+    poset_t &poset = pos_it->second;
     for (size_t z = 0; z < N; ++z) {
         if (poset[z][x])
             poset[z] |= poset[y];
