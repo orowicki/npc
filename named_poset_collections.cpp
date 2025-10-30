@@ -30,9 +30,9 @@ using col_iter_t   = collection_t::iterator;
 using umap_iter_t  = unordered_map<long, collection_t>::iterator;
 
 /* SIOF workaround */
-unordered_map<long, collection_t> &collections()
+collection_map_t &collections()
 {
-    static unordered_map<long, collection_t> collections;
+    static collection_map_t collections;
     return collections;
 }
 
@@ -76,7 +76,7 @@ bool name_is_valid(const string &name)
  */
 void initialize_poset(poset_t &poset)
 {
-    for (size_t i = 0; i < (size_t)N; ++i)
+    for (size_t i = 0; i < N; ++i)
         poset[i][i] = true;
 }
 
@@ -149,7 +149,10 @@ bool npc_new_poset(long id, const char *name)
 {
     if (!name)
         return false;
+
     const string name_string(name);
+    if (!name_is_valid(name_string))
+        return false;
 
     if (!name_is_valid(name_string))
         return false;
@@ -166,13 +169,18 @@ bool npc_new_poset(long id, const char *name)
         return true;
     }
 
-    return false;
+    poset_t new_poset;
+    initialize_poset(new_poset);
+    col_it->second.emplace(std::move(name_string), std::move(new_poset));
+
+    return true;
 }
 
 void npc_delete_poset(long id, const char *name)
 {
     if (!name)
         return;
+
     const string name_string(name);
 
     umap_iter_t umap_i;
@@ -191,6 +199,8 @@ bool npc_copy_poset(long id, const char *name_dst, const char *name_src)
 
     const string name_dst_string(name_dst);
     const string name_src_string(name_src);
+    if (!name_is_valid(name_dst_string))
+        return false;
 
     /**
     * Checks only the name of the destination string.
@@ -212,7 +222,9 @@ bool npc_copy_poset(long id, const char *name_dst, const char *name_src)
         return true;
     }
 
-    return false;
+    col_it->second[name_dst_string] = pos_it->second;
+
+    return true;
 }
 
 char const *npc_first_poset(long id)
@@ -225,13 +237,14 @@ char const *npc_first_poset(long id)
     if (!c.empty())
         return c.begin()->first.c_str();
 
-    return NULL;
+    return col_it->second.begin()->first.c_str();
 }
 
 char const *npc_next_poset(long id, char const *name)
 {
     if (!name)
         return NULL;
+
     const string name_string(name);
 
     col_iter_t iter;
@@ -241,7 +254,7 @@ char const *npc_next_poset(long id, char const *name)
     if (next(iter) != collections().at(id).end())
         return next(iter)->first.c_str();
 
-    return NULL;
+    return next(pos_it)->first.c_str();
 }
 
 bool npc_add_relation(long id, const char *name, size_t x, size_t y)
@@ -260,26 +273,37 @@ bool npc_add_relation(long id, const char *name, size_t x, size_t y)
         return true;
     }
 
-    return false;
+    auto pos_it = find_poset(col_it, name_string);
+    if (!poset_exists(col_it, pos_it))
+        return false;
+
+    if (!relation_addition_is_valid(pos_it, x, y))
+        return false;
+
+    update_transitive_closure(pos_it, x, y);
+
+    return true;
 }
 
 bool npc_is_relation(long id, const char *name, size_t x, size_t y)
 {
     if (!name || x >= N || y >= N)
         return false;
+
     const string name_string(name);
 
     col_iter_t iter;
     if (poset_exists(id, name_string, iter))
         return iter->second[x][y];
 
-    return false;
+    return pos_it->second[x][y];
 }
 
 bool npc_remove_relation(long id, const char *name, size_t x, size_t y)
 {
     if (!name || x == y || x >= N || y >= N)
         return false;
+
     const string name_string(name);
 
     col_iter_t iter;
@@ -292,7 +316,16 @@ bool npc_remove_relation(long id, const char *name, size_t x, size_t y)
         return true;
     }
 
-    return false;
+    auto pos_it = find_poset(col_it, name_string);
+    if (!poset_exists(col_it, pos_it))
+        return false;
+
+    if (!relation_removal_is_valid(pos_it, x, y))
+        return false;
+
+    pos_it->second[x][y] = false;
+
+    return true;
 }
 
 size_t npc_size()
@@ -302,7 +335,7 @@ size_t npc_size()
 
 size_t npc_poset_size()
 {
-    return (size_t)N;
+    return N;
 }
 
 size_t npc_collection_size(long id)
@@ -311,7 +344,7 @@ size_t npc_collection_size(long id)
     if (collection_exists(id, umap_i))
         return umap_i->second.size();
 
-    return 0;
+    return col_it->second.size();
 }
 
 } // namespace cxx
