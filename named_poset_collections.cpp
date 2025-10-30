@@ -71,9 +71,9 @@ bool poset_exists(const collection_map_t::iterator col_it,
  */
 bool name_is_valid(const string &name)
 {
-    return (!name.empty() && all_of(name.begin(), name.end(), [](char c) {
+    return !name.empty() && all_of(name.begin(), name.end(), [](char c) {
         return (isalnum(static_cast<unsigned char>(c)) || c == '_');
-    }));
+    });
 }
 
 /**
@@ -87,19 +87,22 @@ void initialize_poset(poset_t &poset)
 
 /**
  * Returns true if there is no element z such that {x, z} and {z, y} belong to
- * the poset. Otherwise returns false.
+ * the poset and {x, y} doesn't belong to the poset. Otherwise returns false.
  */
 bool relation_removal_is_valid(const collection_t::iterator pos_it,
                                const size_t x, const size_t y)
 {
     const poset_t &poset = pos_it->second;
 
+    if (!poset[x][y])
+        return false;
+
     for (size_t z = 0; z < N; ++z) {
         if (poset[x][z] && poset[z][y] && z != x && z != y)
             return false;
     }
 
-    return poset[x][y];
+    return true;
 }
 
 /**
@@ -152,7 +155,7 @@ long npc_new_collection(void)
 
 void npc_delete_collection(long id)
 {
-    auto col_it = find_collection(id);
+    const auto col_it = find_collection(id);
     if (collection_exists(col_it))
         collections().erase(col_it);
 }
@@ -188,11 +191,11 @@ void npc_delete_poset(long id, const char *name)
 
     const string name_string(name);
 
-    auto col_it = find_collection(id);
+    const auto col_it = find_collection(id);
     if (!collection_exists(col_it))
         return;
 
-    auto pos_it = find_poset(col_it, name_string);
+    const auto pos_it = find_poset(col_it, name_string);
     if (!poset_exists(col_it, pos_it))
         return;
 
@@ -209,11 +212,11 @@ bool npc_copy_poset(long id, const char *name_dst, const char *name_src)
     if (!name_is_valid(name_dst_string))
         return false;
 
-    auto col_it = find_collection(id);
+    const auto col_it = find_collection(id);
     if (!collection_exists(col_it))
         return false;
 
-    auto pos_it = find_poset(col_it, name_src_string);
+    const auto pos_it = find_poset(col_it, name_src_string);
     if (!poset_exists(col_it, pos_it))
         return false;
 
@@ -224,7 +227,7 @@ bool npc_copy_poset(long id, const char *name_dst, const char *name_src)
 
 char const *npc_first_poset(long id)
 {
-    auto col_it = find_collection(id);
+    const auto col_it = find_collection(id);
     if (!collection_exists(col_it) || col_it->second.empty())
         return NULL;
 
@@ -238,11 +241,11 @@ char const *npc_next_poset(long id, char const *name)
 
     const string name_string(name);
 
-    auto col_it = find_collection(id);
+    const auto col_it = find_collection(id);
     if (!collection_exists(col_it))
         return NULL;
 
-    auto pos_it = find_poset(col_it, name_string);
+    const auto pos_it = find_poset(col_it, name_string);
     if (!poset_exists(col_it, pos_it) || next(pos_it) == col_it->second.end())
         return NULL;
 
@@ -251,20 +254,18 @@ char const *npc_next_poset(long id, char const *name)
 
 bool npc_add_relation(long id, const char *name, size_t x, size_t y)
 {
-    if (!name || x >= N || y >= N)
+    if (!name || x >= N || y >= N || x == y)
         return false;
 
     const string name_string(name);
 
-    auto col_it = find_collection(id);
+    const auto col_it = find_collection(id);
     if (!collection_exists(col_it))
         return false;
 
-    auto pos_it = find_poset(col_it, name_string);
-    if (!poset_exists(col_it, pos_it))
-        return false;
-
-    if (!relation_addition_is_valid(pos_it, x, y))
+    const auto pos_it = find_poset(col_it, name_string);
+    if (!poset_exists(col_it, pos_it) ||
+        !relation_addition_is_valid(pos_it, x, y))
         return false;
 
     update_transitive_closure(pos_it, x, y);
@@ -279,11 +280,11 @@ bool npc_is_relation(long id, const char *name, size_t x, size_t y)
 
     const string name_string(name);
 
-    auto col_it = find_collection(id);
+    const auto col_it = find_collection(id);
     if (!collection_exists(col_it))
         return false;
 
-    auto pos_it = find_poset(col_it, name_string);
+    const auto pos_it = find_poset(col_it, name_string);
     if (!poset_exists(col_it, pos_it))
         return false;
 
@@ -297,15 +298,13 @@ bool npc_remove_relation(long id, const char *name, size_t x, size_t y)
 
     const string name_string(name);
 
-    auto col_it = find_collection(id);
+    const auto col_it = find_collection(id);
     if (!collection_exists(col_it))
         return false;
 
-    auto pos_it = find_poset(col_it, name_string);
-    if (!poset_exists(col_it, pos_it))
-        return false;
-
-    if (!relation_removal_is_valid(pos_it, x, y))
+    const auto pos_it = find_poset(col_it, name_string);
+    if (!poset_exists(col_it, pos_it) ||
+        !relation_removal_is_valid(pos_it, x, y))
         return false;
 
     pos_it->second[x][y] = false;
@@ -325,7 +324,7 @@ size_t npc_poset_size()
 
 size_t npc_collection_size(long id)
 {
-    auto col_it = find_collection(id);
+    const auto col_it = find_collection(id);
 
     if (!collection_exists(col_it))
         return 0;
