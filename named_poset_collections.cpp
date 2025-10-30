@@ -26,6 +26,8 @@ namespace
 
 using poset_t      = array<bitset<N>, N>;
 using collection_t = map<string, poset_t>;
+using col_iter_t   = collection_t::iterator;
+using umap_iter_t  = unordered_map<long, collection_t>::iterator;
 
 /* SIOF workaround */
 unordered_map<long, collection_t> &collections()
@@ -41,19 +43,20 @@ long &nextID()
     return nextID;
 }
 
-bool collection_exists(const long id)
+bool collection_exists(const long id, umap_iter_t &umap_i)
 {
-    return collections().find(id) != collections().end();
+    umap_i = collections().find(id);
+    return umap_i != collections().end();
 }
 
-bool poset_exists(const long id, const string &name)
-{
-    bool col_exists = collection_exists(id);
-
-    if (!col_exists)    
+bool poset_exists(const long id, const string &name, col_iter_t &col_i)
+{   
+    umap_iter_t umap_i;
+    if (!collection_exists(id, umap_i))    
         return false;
-
-    return collections().at(id).find(name) != collections().at(id).end();
+    
+    collection_t &col = umap_i->second;
+    return (col_i = col.find(name)) != col.end();
 }
 
 /**
@@ -81,18 +84,14 @@ void initialize_poset(poset_t &poset)
  * Returns true if there is no element z such that {x, z} and {z, y} belong to
  * the poset. Otherwise returns false.
  */
-bool relation_removal_is_valid(const long id, const string &name,
-                               const size_t x, const size_t y, auto &poset)
+bool relation_removal_is_valid(const size_t x, const size_t y, poset_t &poset)
 {
-    if (!poset[x][y])
-        return false;
-    
     for (size_t z = 0; z < (size_t)N; ++z) {
         if (poset[x][z] && poset[z][y] && z != x && z != y)
             return false;
     }
 
-    return true;
+    return poset[x][y];
 }
 
 /**
@@ -102,8 +101,7 @@ bool relation_removal_is_valid(const long id, const string &name,
  * @return false if the relation already exists or would break asymmetry,
  *         true otherwise.
  */
-bool relation_addition_is_valid(const long id, const string &name,
-                                const size_t x, const size_t y, auto &poset)
+bool relation_addition_is_valid(const size_t x, const size_t y, poset_t &poset)
 {
     return !poset[x][y] && !poset[y][x];
 }
@@ -115,8 +113,7 @@ bool relation_addition_is_valid(const long id, const string &name,
  * Use bitset OR so that z is now in relation {z, ...} with every element that y
  * is in relation {y, ...} with.
  */
-void update_transitive_closure(const long id, const string &name,
-                               const size_t x, const size_t y, auto &poset)
+void update_transitive_closure(const size_t x, const size_t y, poset_t &poset)
 {
     for (size_t z = 0; z < (size_t)N; ++z) {
         if (poset[z][x])
@@ -143,11 +140,11 @@ long npc_new_collection(void)
 
 void npc_delete_collection(long id)
 {
-    if (collection_exists(id))
-        collections().erase(id);
+    umap_iter_t iter;
+    if (collection_exists(id, iter))
+        collections().erase(iter);
 }
 
-// double check - maybe improve? don't think it's necessary(poset_exsits)
 bool npc_new_poset(long id, const char *name)
 {
     if (!name)
@@ -156,12 +153,16 @@ bool npc_new_poset(long id, const char *name)
 
     if (!name_is_valid(name_string))
         return false;
+    
+    umap_iter_t umap_i;
+    if (!collection_exists(id, umap_i)) 
+        return false;
 
-    if (collection_exists(id) && !poset_exists(id, name_string)) {
+    collection_t &col = umap_i->second;
+    if (col.find(name) == col.end()) {
         poset_t new_poset;
         initialize_poset(new_poset);
-        collections().at(id).emplace(std::move(name_string),
-                                     std::move(new_poset));
+        col.emplace(std::move(name_string), std::move(new_poset));
         return true;
     }
 
@@ -174,8 +175,13 @@ void npc_delete_poset(long id, const char *name)
         return;
     const string name_string(name);
 
-    if (poset_exists(id, name_string))
-        collections().at(id).erase(name_string);
+    umap_iter_t umap_i;
+    if (!collection_exists(id, umap_i)) 
+        return;
+    
+    col_iter_t collection_i = umap_i->second.find(name);
+    if (collection_i != umap_i->second.end())
+        collections().at(id).erase(collection_i);
 }
 
 bool npc_copy_poset(long id, const char *name_dst, const char *name_src)
@@ -194,9 +200,9 @@ bool npc_copy_poset(long id, const char *name_dst, const char *name_src)
     if (!name_is_valid(name_dst_string))
         return false;
 
-    if (poset_exists(id, name_src_string)) {
-        collections().at(id)[name_dst_string] =
-            collections().at(id).at(name_src_string);
+    col_iter_t iter;
+    if (poset_exists(id, name_src_string, iter)) {
+        collections().at(id)[name_dst_string] = iter->second;
         return true;
     }
 
@@ -205,46 +211,46 @@ bool npc_copy_poset(long id, const char *name_dst, const char *name_src)
 
 char const *npc_first_poset(long id)
 {
-    if (!collection_exists(id)) 
+    umap_iter_t umap_i;
+    if (!collection_exists(id, umap_i)) 
         return NULL;
     
-    collection_t c = collections().at(id);
-
+    collection_t &c = umap_i->second;
     if (!c.empty())
         return c.begin()->first.c_str();
 
     return NULL;
 }
 
-// double check - maybe improve? don't think it's necessary (2nd and 3rd if statement)
 char const *npc_next_poset(long id, char const *name)
 {
     if (!name)
         return NULL;
     const string name_string(name);
 
-    if (!poset_exists(id, name_string)) 
+    col_iter_t iter;
+    if (!poset_exists(id, name_string, iter)) 
         return NULL;
-
-    if (next(collections().at(id).find(name_string)) != 
-                                                collections().at(id).end())
-        return next(collections().at(id).find(name_string))->first.c_str();
+        
+    if (next(iter) != collections().at(id).end())
+        return next(iter)->first.c_str();
 
     return NULL;
 }
 
 bool npc_add_relation(long id, const char *name, size_t x, size_t y)
 {
-    if (!name || x >= (size_t)N || y >= (size_t)N)
+    if (!name || x >= N || y >= N)
         return false;
-    const string name_string(name);
+     const string name_string(name);
 
-    if (!poset_exists(id, name_string))
+    col_iter_t iter;
+    if (!poset_exists(id, name_string, iter))
         return false;
 
-    auto &poset = collections().at(id).at(name);
-    if (relation_addition_is_valid(id, name_string, x, y, poset)) {
-        update_transitive_closure(id, name_string, x, y, poset);
+    poset_t &poset = iter->second;
+    if (relation_addition_is_valid(x, y, poset)) {
+        update_transitive_closure(x, y, poset);
         return true;
     }
 
@@ -253,28 +259,30 @@ bool npc_add_relation(long id, const char *name, size_t x, size_t y)
 
 bool npc_is_relation(long id, const char *name, size_t x, size_t y)
 {
-    if (!name || x >= (size_t)N || y >= size_t(N))
+    if (!name || x >= N || y >= N)
         return false;
     const string name_string(name);
 
-    if (poset_exists(id, name_string))
-        return collections().at(id).at(name_string)[x][y];
+    col_iter_t iter;
+    if (poset_exists(id, name_string, iter))
+        return iter->second[x][y];
 
     return false;
 }
 
 bool npc_remove_relation(long id, const char *name, size_t x, size_t y)
 {
-    if (!name || x != y || x <= (size_t)N || y <= (size_t)N)
+    if (!name || x == y || x >= N || y >= N)
         return false;
     const string name_string(name);
 
-    if (!poset_exists(id, name_string))
+    col_iter_t iter;
+    if (!poset_exists(id, name_string, iter))
         return false;
     
-    auto &poset = collections().at(id).at(name);
-    if (relation_removal_is_valid(id, name_string, x, y, poset)) {
-        collections().at(id).at(name)[x][y] = false;
+    poset_t &poset = iter->second;
+    if (relation_removal_is_valid(x, y, poset)) {
+        poset[x][y] = false;
         return true;
     }
 
@@ -292,9 +300,10 @@ size_t npc_poset_size()
 }
 
 size_t npc_collection_size(long id)
-{
-    if (collection_exists(id))
-        return collections().at(id).size();
+{   
+    umap_iter_t umap_i;
+    if (collection_exists(id, umap_i))
+        return umap_i->second.size();
 
     return 0;
 }
