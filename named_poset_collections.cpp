@@ -181,7 +181,7 @@ void npc_delete_poset(long id, const char *name)
     
     col_iter_t collection_i = umap_i->second.find(name);
     if (collection_i != umap_i->second.end())
-        collections().at(id).erase(collection_i);
+        umap_i->second.erase(collection_i);
 }
 
 bool npc_copy_poset(long id, const char *name_dst, const char *name_src)
@@ -200,9 +200,15 @@ bool npc_copy_poset(long id, const char *name_dst, const char *name_src)
     if (!name_is_valid(name_dst_string))
         return false;
 
-    col_iter_t iter;
-    if (poset_exists(id, name_src_string, iter)) {
-        collections().at(id)[name_dst_string] = iter->second;
+    umap_iter_t umap_i;
+    if (!collection_exists(id, umap_i))
+        return false;
+
+    collection_t &col = umap_i->second;
+    col_iter_t const col_i = col.find(name_src_string);
+
+    if (col_i != col.end()) {
+        col[name_dst_string] = col_i->second;
         return true;
     }
 
