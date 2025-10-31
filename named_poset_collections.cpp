@@ -1,3 +1,9 @@
+/**
+ * Implementation of the Named Poset Collections module.
+ *
+ * See named_poset_collections.h for the detailed description.
+ */
+
 #include "named_poset_collections.h"
 
 #include <algorithm>
@@ -42,11 +48,18 @@ long &nextID()
     return nextID;
 }
 
+/**
+ * Returns iterator pointing to the collection corresponding to `id`.
+ */
 collection_map_t::iterator find_collection(const long id)
 {
     return collections().find(id);
 }
 
+/**
+ * Returns iterator pointing to the poset `name` in the collection pointed to by
+ * `col_it`,
+ */
 collection_t::iterator find_poset(const collection_map_t::iterator col_it,
                                   const string &name)
 {
@@ -86,8 +99,9 @@ void initialize_poset(poset_t &poset)
 }
 
 /**
- * Returns true if there is no element z such that {x, z} and {z, y} belong to
- * the poset and {x, y} doesn't belong to the poset. Otherwise returns false.
+ * Returns true if {x, y} doesn't belong to the poset and there is no
+ * element z such that {x, z} and {z, y} belong to the poset.
+ * Otherwise returns false.
  */
 bool relation_removal_is_valid(const collection_t::iterator pos_it,
                                const size_t x, const size_t y)
