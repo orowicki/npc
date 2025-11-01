@@ -135,8 +135,8 @@ bool relation_addition_is_valid(const collection_t::iterator pos_it,
  * Adds the relation {x, y} and updates the poset to satisfy transitivity.
  * Explanation:
  * Go over every element z that satisfies {z, x},
- * Use bitset OR so that z is now in relation {z, ...} with every element that y
- * is in relation {y, ...} with.
+ * Use bitset OR so that z is now in relation {z, ...} with every element that
+ * y is in relation {y, ...} with.
  */
 void update_transitive_closure(const collection_t::iterator pos_it,
                                const size_t x, const size_t y)
