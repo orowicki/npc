@@ -121,10 +121,8 @@ bool relation_removal_is_valid(const collection_t::iterator pos_it,
 
 /**
  * Checks whether the relation to be added already exists in the poset
- * or violates asymmetry.
- *
- * @return false if the relation already exists or would break asymmetry,
- *         true otherwise.
+ * or violates asymmetry. Returns false if the relation already exists 
+ * or would break asymmetry, true otherwise.
  */
 bool relation_addition_is_valid(const collection_t::iterator pos_it,
                                 const size_t x, const size_t y)
@@ -223,6 +221,11 @@ bool npc_copy_poset(long id, const char *name_dst, const char *name_src)
 
     const string name_dst_string(name_dst);
     const string name_src_string(name_src);
+
+    /**
+     * Don't need to validate name_src_string, because
+     * invalid poset name cannot exist in collection.
+     */
     if (!name_is_valid(name_dst_string))
         return false;
 
