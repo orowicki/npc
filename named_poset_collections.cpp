@@ -49,7 +49,7 @@ long &nextID()
 }
 
 /**
- * Returns iterator pointing to the collection corresponding to `id`.
+ * Returns an iterator pointing to the collection corresponding to `id`.
  */
 collection_map_t::iterator find_collection(const long id)
 {
@@ -57,8 +57,8 @@ collection_map_t::iterator find_collection(const long id)
 }
 
 /**
- * Returns iterator pointing to the poset `name` in the collection pointed to by
- * `col_it`,
+ * Returns an iterator pointing to the poset `name` in the collection pointed to
+ * by `col_it`.
  */
 collection_t::iterator find_poset(const collection_map_t::iterator col_it,
                                   const string &name)
@@ -121,7 +121,7 @@ bool relation_removal_is_valid(const collection_t::iterator pos_it,
 
 /**
  * Checks whether the relation to be added already exists in the poset
- * or violates asymmetry. Returns false if the relation already exists 
+ * or violates asymmetry. Returns false if the relation already exists
  * or would break asymmetry, true otherwise.
  */
 bool relation_addition_is_valid(const collection_t::iterator pos_it,
@@ -134,7 +134,7 @@ bool relation_addition_is_valid(const collection_t::iterator pos_it,
 /**
  * Adds the relation {x, y} and updates the poset to satisfy transitivity.
  * Explanation:
- * Go over every element z that satisfies {z, x},
+ * Go over every element z that satisfies {z, x}.
  * Use bitset OR so that z is now in relation {z, ...} with every element that
  * y is in relation {y, ...} with.
  */
@@ -224,7 +224,7 @@ bool npc_copy_poset(long id, const char *name_dst, const char *name_src)
 
     /**
      * Don't need to validate name_src_string, because
-     * invalid poset name cannot exist in collection.
+     * a poset with an invalid name can't exist.
      */
     if (!name_is_valid(name_dst_string))
         return false;
