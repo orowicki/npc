@@ -114,7 +114,7 @@ void initialize_poset(poset_t &poset)
 }
 
 /**
- * Returns true if {x, y} doesn't belong to the poset and there is no
+ * Returns true if {x, y} belongs to the poset and there is no
  * element z such that {x, z} and {z, y} belong to the poset.
  * Otherwise returns false.
  */
