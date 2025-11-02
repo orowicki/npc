@@ -23,6 +23,7 @@ using std::map, std::unordered_map;
 using std::next;
 using std::string;
 
+/* N is the element count in posets. */
 #ifndef N
 #define N 32
 #endif
@@ -30,8 +31,22 @@ using std::string;
 namespace
 {
 
-using poset_t          = array<bitset<N>, N>;
-using collection_t     = map<string, poset_t>;
+/**
+ * We're representing the partially ordered set as a NxN matrix,
+ * to do this efficiently we use an array of N bitsets.
+ */
+using poset_t = array<bitset<N>, N>;
+
+/**
+ * We need to order posets by their names so we're using a map instead of
+ * unordered_map.
+ */
+using collection_t = map<string, poset_t>;
+
+/**
+ * We're using an unordered_map to keep all the collections
+ * accessible by ID in constant time.
+ */
 using collection_map_t = unordered_map<long, collection_t>;
 
 /* SIOF workaround */
