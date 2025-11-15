@@ -56,13 +56,6 @@ collection_map_t &collections()
     return collections;
 }
 
-/* SIOF workaround */
-long &nextID()
-{
-    static long nextID = 0;
-    return nextID;
-}
-
 /**
  * Returns an iterator pointing to the collection corresponding to `id`.
  */
@@ -170,12 +163,13 @@ namespace cxx
 
 long npc_new_collection(void)
 {
-    if (nextID() == LONG_MAX)
+    static long nextID = 0;
+    if (nextID == LONG_MAX)
         return -1;
 
-    long id = nextID();
+    long id = nextID;
     collections().emplace(id, collection_t());
-    ++nextID();
+    ++nextID;
 
     return id;
 }
@@ -261,7 +255,7 @@ char const *npc_first_poset(long id)
 {
     const auto col_it = find_collection(id);
     if (!collection_exists(col_it) || col_it->second.empty())
-        return NULL;
+        return nullptr;
 
     return col_it->second.begin()->first.c_str();
 }
@@ -269,17 +263,17 @@ char const *npc_first_poset(long id)
 char const *npc_next_poset(long id, char const *name)
 {
     if (!name)
-        return NULL;
+        return nullptr;
 
     const string name_string(name);
 
     const auto col_it = find_collection(id);
     if (!collection_exists(col_it))
-        return NULL;
+        return nullptr;
 
     const auto pos_it = find_poset(col_it, name_string);
     if (!poset_exists(col_it, pos_it) || next(pos_it) == col_it->second.end())
-        return NULL;
+        return nullptr;
 
     return next(pos_it)->first.c_str();
 }

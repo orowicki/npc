@@ -19,7 +19,7 @@
 #ifndef NAMED_POSET_COLLECTIONS_H
 #define NAMED_POSET_COLLECTIONS_H
 
-#include <stddef.h>
+#include <cstddef>
 
 #ifdef __cplusplus
 namespace cxx
